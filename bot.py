@@ -5,46 +5,34 @@ import io
 from io import BytesIO
 from PIL import Image
 
-# ---------- AUTO PACKAGE INSTALLER (Install rembg and its dependencies) ----------
-# Ab aapko 'rembg' package ki zaroorat padegi.
+# ---------- AUTO PACKAGE INSTALLER ----------
+# rembg, pillow, aur python-telegram-bot install ho chuke hain
 required = ["pillow", "requests", "python-telegram-bot", "rembg"]
 for pkg in required:
     try:
-        # Check if package is installed before attempting to install
         __import__(pkg.split("==")[0])
     except ImportError:
         print(f"📦 Installing {pkg} ...")
-        # Install the package
         subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", pkg])
 
 
 # ---------- IMPORTS AND CONFIGURATION (Read from Environment Variables) ----------
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from rembg import remove # rembg library se remove function import kiya
+# 'Filters' ki jagah small 'filters' import kiya gaya hai
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters 
+from rembg import remove 
 
-# ⚠️ Ab sirf BOT_TOKEN ki zaroorat hai. REMOVE_BG_API_KEY ki zaroorat nahi hai.
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-# REMOVE_BG_API_KEY variable ab unused hai aur hata diya gaya hai.
 
 
-# ---------- BACKGROUND REMOVER FUNCTION (Local/Free Model) ----------
+# ---------- BACKGROUND REMOVER FUNCTION (No Change) ----------
 def remove_bg_local(image: Image.Image) -> BytesIO:
-    """
-    Removes background using the free local 'rembg' library (U-2-Net model).
-    Returns processed image in BytesIO format.
-    """
     print("🧠 Removing background using rembg...")
-    
-    # 1. Convert PIL Image to Bytes for rembg input
     input_buffer = BytesIO()
     image.save(input_buffer, format="PNG")
     input_buffer.seek(0)
     
-    # 2. Process using rembg
-    # Yeh automatically zaroori model download kar lega agar pehle se nahi hai.
     output_bytes = remove(input_buffer.read())
     
-    # 3. Create BytesIO output
     result_buffer = BytesIO(output_bytes)
     result_buffer.seek(0)
     
@@ -52,7 +40,7 @@ def remove_bg_local(image: Image.Image) -> BytesIO:
     return result_buffer
 
 
-# ---------- BOT COMMANDS (handle_image function updated) ----------
+# ---------- BOT COMMANDS (Handlers Updated for v20.x) ----------
 def start(update, context):
     update.message.reply_text(
         "👋 Hey! Send me a photo and I’ll remove its background for you instantly using a free model!"
@@ -72,12 +60,10 @@ def handle_image(update, context):
             
         photo = photo_sizes[-1].get_file()
         file_bytes = BytesIO(photo.download_as_bytearray())
-        # rembg ko input dene ke liye PNG format better hai
-        image = Image.open(file_bytes).convert("RGB") # REMBG ke liye 'RGB' convert kiya
+        image = Image.open(file_bytes).convert("RGB") 
 
         update.message.reply_text("⏳ Removing background, please wait...")
 
-        # Function call change kiya remove_bg_online se remove_bg_local mein
         result = remove_bg_local(image) 
         result.seek(0)
 
@@ -91,7 +77,7 @@ def handle_text(update, context):
     update.message.reply_text("💬 Please send an image, not text!")
 
 
-# ---------- MAIN (No Change) ----------
+# ---------- MAIN (Handlers Updated for v20.x) ----------
 def main():
     if not BOT_TOKEN:
         print("FATAL: BOT_TOKEN not found. Set it as an environment variable.")
@@ -102,8 +88,10 @@ def main():
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help_command))
-    dp.add_handler(MessageHandler(Filters.photo, handle_image))
-    dp.add_handler(MessageHandler(Filters.text & (~Filters.command), handle_text)) 
+    # Filters.photo ki jagah filters.PHOTO
+    dp.add_handler(MessageHandler(filters.PHOTO, handle_image)) 
+    # Filters.text ki jagah filters.TEXT & (~filters.COMMAND)
+    dp.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_text)) 
 
     print("🤖 Bot is running... Send /start in Telegram.")
     updater.start_polling()
