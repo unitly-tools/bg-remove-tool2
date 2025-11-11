@@ -7,7 +7,7 @@ from PIL import Image
 
 # ---------- AUTO PACKAGE INSTALLER (Install rembg and its dependencies) ----------
 # Ab aapko 'rembg' package ki zaroorat padegi.
-required = ["pillow", "requests", "python-telegram-bot==13.15", "rembg"]
+required = ["pillow", "requests", "python-telegram-bot", "rembg"]
 for pkg in required:
     try:
         # Check if package is installed before attempting to install
