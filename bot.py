@@ -83,7 +83,7 @@ def main():
         print("FATAL: BOT_TOKEN not found. Set it as an environment variable.")
         sys.exit(1)
         
-    updater = Updater(BOT_TOKEN, use_context=True)
+    updater = Updater(BOT_TOKEN)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
