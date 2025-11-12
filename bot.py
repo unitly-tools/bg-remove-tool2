@@ -5,9 +5,8 @@ import io
 from io import BytesIO
 from PIL import Image
 
-# ---------- AUTO PACKAGE INSTALLER ----------
-# rembg, pillow, aur python-telegram-bot install ho chuke hain
-required = ["pillow", "requests", "python-telegram-bot", "rembg"]
+# ---------- AUTO PACKAGE INSTALLER (No change) ----------
+required = ["pillow", "requests", "python-telegram-bot", "rembg", "onnxruntime"]
 for pkg in required:
     try:
         __import__(pkg.split("==")[0])
@@ -16,9 +15,8 @@ for pkg in required:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", pkg])
 
 
-# ---------- IMPORTS AND CONFIGURATION (Read from Environment Variables) ----------
-# 'Filters' ki jagah small 'filters' import kiya gaya hai
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters 
+# ---------- IMPORTS AND CONFIGURATION (Application class use kiya) ----------
+from telegram.ext import Application, CommandHandler, MessageHandler, filters 
 from rembg import remove 
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -40,7 +38,7 @@ def remove_bg_local(image: Image.Image) -> BytesIO:
     return result_buffer
 
 
-# ---------- BOT COMMANDS (Handlers Updated for v20.x) ----------
+# ---------- BOT COMMANDS (No Change) ----------
 def start(update, context):
     update.message.reply_text(
         "👋 Hey! Send me a photo and I’ll remove its background for you instantly using a free model!"
@@ -77,25 +75,25 @@ def handle_text(update, context):
     update.message.reply_text("💬 Please send an image, not text!")
 
 
-# ---------- MAIN (Handlers Updated for v20.x) ----------
+# ---------- MAIN (Updated for Application) ----------
 def main():
     if not BOT_TOKEN:
         print("FATAL: BOT_TOKEN not found. Set it as an environment variable.")
         sys.exit(1)
         
-    updater = Updater(BOT_TOKEN)
-    dp = updater.dispatcher
-
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help_command))
-    # Filters.photo ki jagah filters.PHOTO
-    dp.add_handler(MessageHandler(filters.PHOTO, handle_image)) 
-    # Filters.text ki jagah filters.TEXT & (~filters.COMMAND)
-    dp.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_text)) 
+    # Updater is replaced by Application
+    application = Application.builder().token(BOT_TOKEN).build()
+    
+    # dp is now the application instance
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_image)) 
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_text)) 
 
     print("🤖 Bot is running... Send /start in Telegram.")
-    updater.start_polling()
-    updater.idle()
+    
+    # start_polling is replaced by run_polling
+    application.run_polling() 
 
 
 if __name__ == "__main__":
